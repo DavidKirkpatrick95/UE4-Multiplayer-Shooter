@@ -18,6 +18,13 @@ public:
 	// Sets default values for this component's properties
 	USHealthComponent();
 
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+		FOnHealthChangedSignature OnHealthChanged;
+
+	//UPROPERTY(EditDefaultsOnly, Replicated, BlueprintReadOnly, Category = "HealthComponent")
+		//uint8 TeamNum;
+
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -31,8 +38,4 @@ protected:
 	UFUNCTION()
 		void HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
-public:
-
-	UPROPERTY(BlueprintAssignable, Category = "Events")
-		FOnHealthChangedSignature OnHealthChanged;
 };
