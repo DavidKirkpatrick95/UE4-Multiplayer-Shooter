@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
 
 #include "MenuInterface.h"
 #include "ShooterMultiGameInstance.generated.h"
@@ -22,7 +24,7 @@ public:
 		void Init();
 
 		UFUNCTION(BlueprintCallable)
-			void LoadMenu();
+			void LoadMenuWidget();
 
 		UFUNCTION(BlueprintCallable)
 			void InGameLoadMenu();
@@ -39,6 +41,8 @@ public:
 		UFUNCTION(Exec)
 			void QuitGame();
 
+		//UFUNCTION(Exec)
+		void  OnCreateSessionComplete(FName SessionName, bool Success);
 
 
 private:
@@ -51,4 +55,5 @@ private:
 
 	class UMenuWidget* InGameMenu;
 
+	IOnlineSessionPtr SessionInterface;
 };

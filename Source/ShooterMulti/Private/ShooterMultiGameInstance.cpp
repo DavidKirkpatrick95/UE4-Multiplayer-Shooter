@@ -7,9 +7,16 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 #include "Blueprint/UserWidget.h"
+
+#include "OnlineSessionSettings.h"
+//#include "OnlineSubsystemTypes.h"
+
+
 #include "InGameMenu.h"
 #include "MainMenu.h"
 #include "MenuWidget.h"
+
+const static FName SESSION_NAME = TEXT("My Session Game");
 
 UShooterMultiGameInstance::UShooterMultiGameInstance(const FObjectInitializer& FObjectInitializer)
 {
@@ -29,12 +36,24 @@ UShooterMultiGameInstance::UShooterMultiGameInstance(const FObjectInitializer& F
 void UShooterMultiGameInstance::Init()
 {
 
-	//UE_LOG(LogTemp, Warning, TEXT("INIT, Found class %s"), *MenuClass->GetName());
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	//if (!ensure(Subsystem != nullptr)) return;
 
+	if (Subsystem != nullptr)
+	{
+		//shared pointer to i online session
+		SessionInterface = Subsystem->GetSessionInterface();
+		if (SessionInterface.IsValid())
+		{	//UE_LOG(LogTemp, Warning, TEXT("Found session interface"));
+
+			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UShooterMultiGameInstance::OnCreateSessionComplete); //once session has finished completing successfully, then we execute host code
+			//SessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this);
+		}
+	}
 
 }
 
-void UShooterMultiGameInstance::LoadMenu()
+void UShooterMultiGameInstance::LoadMenuWidget()
 {
 	if (!ensure(MenuClass != nullptr)) return;
 
@@ -66,8 +85,13 @@ void UShooterMultiGameInstance::InGameLoadMenu()
 
 }
 
-void UShooterMultiGameInstance::Host()
+void UShooterMultiGameInstance::OnCreateSessionComplete(FName SessionName, bool Success)
 {
+
+	if (!Success) {
+		UE_LOG(LogTemp, Warning, TEXT("session creation no success"));
+		return;
+	}
 	if (_Menu != nullptr)
 	{
 		_Menu->TearDown();
@@ -83,8 +107,27 @@ void UShooterMultiGameInstance::Host()
 	if (ensure(World == nullptr)) return;
 	World->ServerTravel("/Game/Maps/explosive_Barrel_Test?listen");
 
+}
 
 
+//call when button is clickec
+void UShooterMultiGameInstance::Host()
+{
+	class FOnlineSessionSettings SessionSettings;
+	if (SessionInterface.IsValid())
+	{
+		auto ExistingSession  = SessionInterface->GetNamedSession(SESSION_NAME);
+		if (ExistingSession == nullptr) 
+		{
+
+			//SessionInterface->DestroySession(SESSION_NAME, );
+
+		}
+		else //create session
+		{
+			SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings); // when host button is pressed, we create the session
+		}
+	}
 }
 
 void UShooterMultiGameInstance::Join(const FString& Address)

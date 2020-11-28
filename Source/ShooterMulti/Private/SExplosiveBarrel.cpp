@@ -5,6 +5,7 @@
 #include "ShooterMulti/Public/Components/SHealthComponent.h"
 #include "PhysicsEngine/RadialForceComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h" // contains DOREPLIFETIME MACRO
 
 
 // Sets default values
@@ -32,6 +33,9 @@ ASExplosiveBarrel::ASExplosiveBarrel()
 
 	ExplosionImpulse = 400;
 
+	SetReplicates(true);
+	SetReplicateMovement(true);
+
 }
 
 // Called when the game starts or when spawned
@@ -40,6 +44,16 @@ void ASExplosiveBarrel::BeginPlay()
 	Super::BeginPlay();
 	
 }
+/*
+
+void ASExplosiveBarrel::Explode()
+{
+
+
+
+
+}
+*/
 
 void ASExplosiveBarrel::OnHealthChanged(USHealthComponent* HealthCompParameter, float Health, float HealthDelta, const class UDamageType* DamageType,
 	class AController* InstigatedBy, AActor* DamageCauser)
@@ -49,25 +63,63 @@ void ASExplosiveBarrel::OnHealthChanged(USHealthComponent* HealthCompParameter, 
 		return;
 	}
 
-
 	if (Health <= 0.0f)
 	{
 		//explode!
 
 
-		FVector BoostIntensity = FVector::UpVector * ExplosionImpulse;
-
-		MeshComp->AddImpulse(BoostIntensity, NAME_None,true);
-
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation());
-
-		MeshComp->SetMaterial(0, ExplodedMaterial);
-
-		RadialForceComp->FireImpulse();
-
+		//Explode();
 		bExploded = true;
+		OnRep_Exploded();
+
+
+
+			FVector BoostIntensity = FVector::UpVector * ExplosionImpulse;
+			MeshComp->AddImpulse(BoostIntensity, NAME_None, true);
+			RadialForceComp->FireImpulse();
 
 
 	}
+	
+
+
+
+}
+/*
+void ASExplosiveBarrel::ServerExplode_Implementation() {
+
+	//play logic
+
+	Explode();
+
 }
 
+bool ASExplosiveBarrel::ServerExplode_Validate() {
+
+
+
+	return true;
+}
+*/
+void ASExplosiveBarrel::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ASExplosiveBarrel, bExploded);
+
+
+	
+
+}
+
+void ASExplosiveBarrel::OnRep_Exploded()
+{
+	//the visual effects
+
+
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation());
+	MeshComp->SetMaterial(0, ExplodedMaterial);
+
+
+
+}

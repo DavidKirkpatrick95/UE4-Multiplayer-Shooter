@@ -33,6 +33,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 		USHealthComponent* HealthComp;
 
+	UPROPERTY(ReplicatedUsing = OnRep_Exploded)
 	bool bExploded;
 
 	UFUNCTION()
@@ -46,6 +47,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 		UMaterialInterface* ExplodedMaterial;
+
+	UFUNCTION()
+		void OnRep_Exploded();
 
 public:	
 

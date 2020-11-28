@@ -21,15 +21,19 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 		FOnHealthChangedSignature OnHealthChanged;
 
-	//UPROPERTY(EditDefaultsOnly, Replicated, BlueprintReadOnly, Category = "HealthComponent")
-		//uint8 TeamNum;
+	//property not duplicated because game currently has no team switching
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HealthComponent")
+		uint8 TeamNum;
+
+	UFUNCTION(BlueprintPure, Category = "Components")
+		static bool IsFriendly(AActor* A, AActor* B);
 
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	UPROPERTY(BlueprintReadOnly, Category = "HealthComponent")
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "HealthComponent")
 		float Health;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HealthComponent")

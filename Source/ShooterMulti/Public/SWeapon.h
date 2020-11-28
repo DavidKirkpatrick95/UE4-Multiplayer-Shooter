@@ -10,6 +10,24 @@ class USkeletalMeshComponent;
 class UDamageType;
 class UParticleSystem;
 
+
+
+USTRUCT()
+struct FHitScanTrace
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY()
+	TEnumAsByte<EPhysicalSurface> SurfaceType;
+
+	UPROPERTY()
+	FVector_NetQuantize TraceTo;
+
+};
+
+
 UCLASS()
 class SHOOTERMULTI_API ASWeapon : public AActor
 {
@@ -20,11 +38,16 @@ public:
 	ASWeapon();
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-		virtual void Fire();
+	virtual void Fire();
 
 	void StartFire();
 
 	void StopFire();
+
+	//only runs on server, guaranteed to reach server, required for servers
+
+	UFUNCTION(Server, Reliable, WithValidation )
+		void ServerFire();
 
 protected:
 
@@ -38,17 +61,19 @@ protected:
 
 	// RPM Bullets per minute fired
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-		float RateOfFire;
+	float RateOfFire;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-		float BaseDamage;
+	float BaseDamage;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-		USkeletalMeshComponent* MeshComp;
+	USkeletalMeshComponent* MeshComp;
 
 
 
 	void PlayFireEffects(FVector TracerEndPoint);
+
+	void PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint);
 
 	UPROPERTY(EditDefaultsOnly, Category = "Damage")
 		TSubclassOf<UDamageType> DamageType;
@@ -76,6 +101,13 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 		TSubclassOf<UCameraShake> FireCamShake;
+	
+	UPROPERTY(ReplicatedUsing = OnRep_HitScanTrace)
+		FHitScanTrace HitScanTrace;
 
+	UFUNCTION()
+	void OnRep_HitScanTrace();
 
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = 0.0f))
+		float BulletSpread;
 };

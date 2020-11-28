@@ -31,6 +31,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		USpringArmComponent* SpringArmComp;
 
+
+	UPROPERTY(Replicated)
 	ASWeapon* CurrentWeapon;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Player")
@@ -39,6 +41,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Player")
 		FName WeaponAttachSocketName;
 
+	UPROPERTY(VisibleAnywhere, Category = "Player")
 	USHealthComponent* HealthComp;
 
 	bool bWantsToZoom;
@@ -51,11 +54,11 @@ protected:
 	//set during begin play
 	float DefaultFOV;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Player")
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Player")
 	bool bDied;
 
 	UFUNCTION()
-	void OnHealthChanged(USHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+	void OnHealthChanged(USHealthComponent* HealthComp1, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
 public:	
 	// Called every frame

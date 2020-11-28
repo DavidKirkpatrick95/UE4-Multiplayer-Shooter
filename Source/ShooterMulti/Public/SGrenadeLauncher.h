@@ -24,7 +24,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "GrenadeLauncher")
 		TSubclassOf<class AActor> ProjectileClass;
 
-	//UFUNCTION(BlueprintCallable, Category = "Weapon")
 		virtual void Fire() override;
 
 };

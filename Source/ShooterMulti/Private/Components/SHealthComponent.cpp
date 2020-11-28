@@ -2,6 +2,7 @@
 
 
 #include "ShooterMulti/Public/Components/SHealthComponent.h"
+#include "Net/UnrealNetwork.h" // contains DOREPLIFETIME MACRO
 
 // Sets default values for this component's properties
 USHealthComponent::USHealthComponent()
@@ -10,10 +11,14 @@ USHealthComponent::USHealthComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
-	//TeamNum = 255;
+	//team default number for enemy team
+	TeamNum = 255;
 
 	// ...
 	DefaultHealth = 100;
+
+
+	SetIsReplicated(true);
 }
 
 
@@ -22,14 +27,17 @@ void USHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-
-	AActor* MyOwner = GetOwner();
-	if (MyOwner)
+	// only hook if we are on the server
+	if (GetOwnerRole() == ROLE_Authority)
 	{
-		MyOwner->OnTakeAnyDamage.AddDynamic(this, &USHealthComponent::HandleTakeAnyDamage);
-	}
 
+		AActor* MyOwner = GetOwner();
+		if (MyOwner)
+		{
+			MyOwner->OnTakeAnyDamage.AddDynamic(this, &USHealthComponent::HandleTakeAnyDamage);
+		}
+
+	}
 	Health = DefaultHealth;
 
 }
@@ -41,6 +49,13 @@ void USHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage, 
 	{
 		return;
 	}
+
+	if (DamagedActor != DamageCauser && IsFriendly(DamagedActor, DamageCauser))
+	{
+		return;
+	}
+
+
 	//update health clamped
 	Health = FMath::Clamp(Health - Damage, 0.0f, DefaultHealth);
 
@@ -48,5 +63,35 @@ void USHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage, 
 	UE_LOG(LogTemp, Log, TEXT("Health Changed: %s"), *FString::SanitizeFloat(Health));
 
 	OnHealthChanged.Broadcast(this, Health, Damage, DamageType, InstigatedBy, DamageCauser);
+
+}
+
+
+void USHealthComponent::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(USHealthComponent, Health);
+}
+
+bool USHealthComponent::IsFriendly(AActor* A, AActor* B)
+{
+	if (A == nullptr || B == nullptr)
+	{
+		//assume friendly
+		return true;
+	}
+
+
+	USHealthComponent* HealthCompA = Cast<USHealthComponent>(A->GetComponentByClass(USHealthComponent::StaticClass() ) );
+	USHealthComponent* HealthCompB = Cast<USHealthComponent>(B->GetComponentByClass(USHealthComponent::StaticClass()));
+
+	if (HealthCompA == nullptr || HealthCompB == nullptr)
+	{
+		//assume friendly
+		return true;
+	}
+
+	return HealthCompA->TeamNum == HealthCompB->TeamNum;
 
 }
