@@ -1,0 +1,2 @@
+C:\UnrealProjects\UE4-Multiplayer-Shooter\sdk\steamworksexample\Debug\SteamworksExample.exe
+C:\UnrealProjects\UE4-Multiplayer-Shooter\sdk\steamworksexample\Debug\SteamworksExample.pdb

@@ -43,6 +43,12 @@ public:
 
 		//UFUNCTION(Exec)
 		void  OnCreateSessionComplete(FName SessionName, bool Success);
+		
+		void  OnDestroySessionComplete(FName SessionName, bool Success);
+
+		void  OnFindSessionsComplete(bool Success);
+
+		void CreateSession();
 
 
 private:
@@ -56,4 +62,6 @@ private:
 	class UMenuWidget* InGameMenu;
 
 	IOnlineSessionPtr SessionInterface;
+
+	TSharedPtr<class FOnlineSessionSearch> SessionSearch;
 };

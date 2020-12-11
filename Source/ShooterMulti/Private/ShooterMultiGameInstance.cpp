@@ -9,7 +9,7 @@
 #include "Blueprint/UserWidget.h"
 
 #include "OnlineSessionSettings.h"
-//#include "OnlineSubsystemTypes.h"
+#include "OnlineSubsystemTypes.h"
 
 
 #include "InGameMenu.h"
@@ -47,7 +47,17 @@ void UShooterMultiGameInstance::Init()
 		{	//UE_LOG(LogTemp, Warning, TEXT("Found session interface"));
 
 			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UShooterMultiGameInstance::OnCreateSessionComplete); //once session has finished completing successfully, then we execute host code
-			//SessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this);
+			SessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this, &UShooterMultiGameInstance::OnDestroySessionComplete);
+			SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UShooterMultiGameInstance::OnFindSessionsComplete);
+			SessionSearch = MakeShareable(new FOnlineSessionSearch());
+			if (SessionSearch.IsValid())
+			{
+				UE_LOG(LogTemp, Warning, TEXT(" starting to find session"));
+				//SessionSearch->bIsLanQuery = true;
+				SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
+			}
+
+
 		}
 	}
 
@@ -109,23 +119,67 @@ void UShooterMultiGameInstance::OnCreateSessionComplete(FName SessionName, bool 
 
 }
 
+void  UShooterMultiGameInstance::OnDestroySessionComplete(FName SessionName, bool Success)
+{
 
-//call when button is clickec
+	if (Success) {
+		CreateSession();
+	}
+
+
+
+}
+
+void UShooterMultiGameInstance::OnFindSessionsComplete(bool Success)
+{
+	UE_LOG(LogTemp, Warning, TEXT(" finished to find session"));
+
+	auto sessionArray = SessionSearch.Get();
+	if (Success && SessionSearch.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT(" finished to find session"));
+
+		for (auto& SearchResult : SessionSearch->SearchResults)
+		{
+			UE_LOG(LogTemp, Warning, TEXT(" found session names: %s"), *SearchResult.GetSessionIdStr());
+
+		}
+	}
+
+
+}
+
+
+void UShooterMultiGameInstance::CreateSession()
+{
+	if (SessionInterface.IsValid()) {
+	
+		class FOnlineSessionSettings SessionSettings;
+		SessionSettings.bIsLANMatch = true; // we are searching on the local network
+		SessionSettings.NumPublicConnections = 2;
+		SessionSettings.bShouldAdvertise = true;
+
+		SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings); // when host button is pressed, we create the session
+	}
+
+
+}
+
+//call when button is clicked
 void UShooterMultiGameInstance::Host()
 {
-	class FOnlineSessionSettings SessionSettings;
 	if (SessionInterface.IsValid())
 	{
 		auto ExistingSession  = SessionInterface->GetNamedSession(SESSION_NAME);
-		if (ExistingSession == nullptr) 
+		if (ExistingSession != nullptr) 
 		{
-
-			//SessionInterface->DestroySession(SESSION_NAME, );
+			
+			SessionInterface->DestroySession(SESSION_NAME);
 
 		}
 		else //create session
 		{
-			SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings); // when host button is pressed, we create the session
+			CreateSession();
 		}
 	}
 }
