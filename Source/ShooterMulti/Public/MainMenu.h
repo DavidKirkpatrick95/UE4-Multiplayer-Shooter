@@ -18,6 +18,8 @@ class SHOOTERMULTI_API UMainMenu : public UMenuWidget
 {
 	GENERATED_BODY()
 
+		UMainMenu(const FObjectInitializer& FObjectInitializer);
+
 
 protected:
 		virtual bool Initialize();
@@ -49,8 +51,8 @@ private:
 	UPROPERTY(meta = (BindWidget))
 		class UWidget* MainMenu;
 
-	UPROPERTY(meta = (BindWidget))
-		class UEditableTextBox* IPAddressField;
+	//UPROPERTY(meta = (BindWidget))
+		//class UEditableTextBox* IPAddressField;
 
 
 

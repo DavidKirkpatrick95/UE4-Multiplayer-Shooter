@@ -7,6 +7,17 @@
 #include "Components/WidgetSwitcher.h"
 #include "Components/EditableTextBox.h"
 
+
+UMainMenu::UMainMenu(const FObjectInitializer& FObjectInitializer)
+{
+
+
+
+
+
+}
+
+
 bool UMainMenu::Initialize()
 {
 	bool Success = Super::Initialize();
@@ -25,6 +36,10 @@ bool UMainMenu::Initialize()
 	ConfirmJoinMenuButton->OnClicked.AddDynamic(this, &UMainMenu::JoinServer);
 	QuitGameButton->OnClicked.AddDynamic(this, &UMainMenu::QuitGame);
 
+
+
+
+
 	return true;
 }
 
@@ -38,9 +53,15 @@ void UMainMenu::HostServer()
 
 void UMainMenu::JoinServer()
 {
-	const FString& Address = IPAddressField->GetText().ToString();
-	if (MenuInterface != nullptr)
-		MenuInterface->Join(Address);
+
+
+
+
+	//not using an IP address field anymore
+
+	//const FString& Address = IPAddressField->GetText().ToString();
+	//if (MenuInterface != nullptr)
+	//	MenuInterface->Join(Address);
 	//const FString& Address
 }
 
