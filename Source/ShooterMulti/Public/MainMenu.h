@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "MenuWidget.h"
+#include "MenuInterface.h"
 
 #include "MainMenu.generated.h"
 
@@ -17,8 +18,14 @@ UCLASS()
 class SHOOTERMULTI_API UMainMenu : public UMenuWidget
 {
 	GENERATED_BODY()
-
+public:
 		UMainMenu(const FObjectInitializer& FObjectInitializer);
+
+		void SetServerList(TArray<FString> ServerNames);
+
+		//void SetMenuInterface(IMenuInterface* MenuInterface);
+
+		void SelectIndex(uint32 Index);
 
 
 protected:
@@ -51,10 +58,15 @@ private:
 	UPROPERTY(meta = (BindWidget))
 		class UWidget* MainMenu;
 
-	//UPROPERTY(meta = (BindWidget))
-		//class UEditableTextBox* IPAddressField;
+	UPROPERTY()
+		class UEditableTextBox* IPAddressField;
 
+	UPROPERTY(meta = (BindWidget))
+		class UPanelWidget* ServerLobbyScrollBox;
 
+		//class UScrollBox* ServerLobbyScrollBox;
+
+	TSubclassOf<class UUserWidget> ServerListClass;
 
 
 	UFUNCTION()
@@ -72,4 +84,5 @@ private:
 	UFUNCTION()
 		void QuitGame();
 
+	TOptional<uint32> SelectedIndex;
 };

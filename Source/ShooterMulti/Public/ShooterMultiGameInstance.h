@@ -30,16 +30,16 @@ public:
 			void InGameLoadMenu();
 
 		UFUNCTION(Exec)
-			void Host();
+			void Host() override;
 
 		UFUNCTION(Exec)
-			void Join(const FString& Address);
+			void Join(uint32 Index)  override;
 
 		UFUNCTION(Exec)
-			void LoadMainMenu();
+			void LoadMainMenu() override;
 
 		UFUNCTION(Exec)
-			void QuitGame();
+			void QuitGame() override;
 
 		//UFUNCTION(Exec)
 		void  OnCreateSessionComplete(FName SessionName, bool Success);
@@ -48,7 +48,15 @@ public:
 
 		void  OnFindSessionsComplete(bool Success);
 
+		void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+
+		//	void BroadcastNetworkFailure(UWorld * World, UNetDriver *NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString = TEXT(""));
+
+		void OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& Error);
+
 		void CreateSession();
+
+		void RefreshServerList() override;
 
 
 private:
@@ -57,7 +65,7 @@ private:
 
 	TSubclassOf<class UUserWidget> InGameMenuClass;
 
-	class UMenuWidget* _Menu;
+	class UMainMenu* _Menu;
 
 	class UMenuWidget* InGameMenu;
 

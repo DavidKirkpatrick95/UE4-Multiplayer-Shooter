@@ -12,6 +12,8 @@ void UMenuWidget::SetMenuInterface(IMenuInterface* MenuInterface1)
 
 }
 
+
+
 void UMenuWidget::SetUp()
 {
 
@@ -27,9 +29,11 @@ void UMenuWidget::SetUp()
 	FInputModeUIOnly InputModeData;
 	InputModeData.SetWidgetToFocus(this->TakeWidget());
 	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+
 	PlayerController->SetInputMode(InputModeData);
 
 	PlayerController->bShowMouseCursor = true;
+
 	this->bIsFocusable = true;
 
 
@@ -40,9 +44,14 @@ void UMenuWidget::SetUp()
 void UMenuWidget::TearDown()
 {
 	this->RemoveFromViewport();
+	//line 48 is part of a crash, when the player is a client and tries to host a game
 
 	UWorld* World = GetWorld();
-	if (!ensure(World != nullptr)) return;
+	if (!ensure(World != nullptr))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Could not get WORLD REFERENCE"));
+		return;
+	}
 
 	APlayerController* PlayerController = World->GetFirstPlayerController();
 	if (ensure(PlayerController == nullptr)) return;

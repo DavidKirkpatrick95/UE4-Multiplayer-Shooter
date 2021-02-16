@@ -16,8 +16,7 @@ class SHOOTERMULTI_API UInGameMenu : public UMenuWidget
 
 public:
 	//void SetMenuInterface(IMenuInterface* MenuInterface);
-	void SetUp();
-	void TearDown();
+
 
 
 	UFUNCTION()

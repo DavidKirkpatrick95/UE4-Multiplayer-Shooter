@@ -28,16 +28,15 @@ UShooterMultiGameInstance::UShooterMultiGameInstance(const FObjectInitializer& F
 
 	ConstructorHelpers::FClassFinder<UUserWidget> InGameMenuBPClass(TEXT("/Game/Blueprints/PauseMenu/WBP_InGameMenu"));
 	if (!ensure(InGameMenuBPClass.Class != nullptr)) return;
+	if (!ensure(InGameMenuBPClass.Class != nullptr)) return;
 
 	InGameMenuClass = InGameMenuBPClass.Class;
-	//UE_LOG(LogTemp, Warning, TEXT("Counstructor, Found class %s"), *MenuClass->GetName() );
 }
 
 void UShooterMultiGameInstance::Init()
 {
 
 	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
-	//if (!ensure(Subsystem != nullptr)) return;
 
 	if (Subsystem != nullptr)
 	{
@@ -49,18 +48,31 @@ void UShooterMultiGameInstance::Init()
 			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UShooterMultiGameInstance::OnCreateSessionComplete); //once session has finished completing successfully, then we execute host code
 			SessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this, &UShooterMultiGameInstance::OnDestroySessionComplete);
 			SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UShooterMultiGameInstance::OnFindSessionsComplete);
+			SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UShooterMultiGameInstance::OnJoinSessionComplete);
+
+
 			SessionSearch = MakeShareable(new FOnlineSessionSearch());
 			if (SessionSearch.IsValid())
 			{
-				UE_LOG(LogTemp, Warning, TEXT(" starting to find session"));
-				//SessionSearch->bIsLanQuery = true;
+				//change this for steam
+				SessionSearch->bIsLanQuery = true;
+				//SessionSearch->QuerySettings.
+				UE_LOG(LogTemp, Warning, TEXT("Starting Find Session"));
 				SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
+
 			}
 
 
 		}
 	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("Found no subsystem"));
+	}
 
+	if (GEngine != nullptr)
+	{
+		GEngine->OnNetworkFailure().AddUObject(this, &UShooterMultiGameInstance::OnNetworkFailure);
+	}
 }
 
 void UShooterMultiGameInstance::LoadMenuWidget()
@@ -82,13 +94,13 @@ void UShooterMultiGameInstance::InGameLoadMenu()
 
 	if (!ensure(InGameMenuClass != nullptr)) return;
 
-	UMenuWidget* _Menu = CreateWidget<UMenuWidget>(this, InGameMenuClass);
+	InGameMenu = CreateWidget<UMenuWidget>(this, InGameMenuClass);
 
-	if (!ensure(_Menu != nullptr)) return;
+	if (!ensure(InGameMenu != nullptr)) return;
 
-	_Menu->SetUp();
+	InGameMenu->SetUp();
 
-	_Menu->SetMenuInterface(this);
+	InGameMenu->SetMenuInterface(this);
 
 	UE_LOG(LogTemp, Warning, TEXT("In Game Load Menu, Found class %s"), *InGameMenuClass->GetName());
 
@@ -107,7 +119,7 @@ void UShooterMultiGameInstance::OnCreateSessionComplete(FName SessionName, bool 
 		_Menu->TearDown();
 	}
 
-
+	//line 117 engine creation is a another error cause when the client tries to host a game
 	UEngine* Engine = GetEngine();
 	if (ensure(Engine == nullptr)) return;
 
@@ -115,7 +127,7 @@ void UShooterMultiGameInstance::OnCreateSessionComplete(FName SessionName, bool 
 
 	UWorld* World = GetWorld();
 	if (ensure(World == nullptr)) return;
-	World->ServerTravel("/Game/Maps/explosive_Barrel_Test?listen");
+	World->ServerTravel("/Game/Maps/Blockout_P?listen");
 
 }
 
@@ -130,24 +142,50 @@ void  UShooterMultiGameInstance::OnDestroySessionComplete(FName SessionName, boo
 
 }
 
+void UShooterMultiGameInstance::OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& Error)
+{
+	LoadMainMenu();
+
+
+}
+
+
+void UShooterMultiGameInstance::RefreshServerList()
+{
+	SessionSearch = MakeShareable(new FOnlineSessionSearch());
+	if (SessionSearch.IsValid())
+	{
+		SessionSearch->MaxSearchResults = 100;
+		SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+		UE_LOG(LogTemp, Warning, TEXT(" starting to find session"));
+		//SessionSearch->bIsLanQuery = true;
+		SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
+	}
+
+}
+
 void UShooterMultiGameInstance::OnFindSessionsComplete(bool Success)
 {
-	UE_LOG(LogTemp, Warning, TEXT(" finished to find session"));
 
 	auto sessionArray = SessionSearch.Get();
-	if (Success && SessionSearch.IsValid())
+	if (Success && SessionSearch.IsValid() && _Menu != nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT(" finished to find session"));
-
+		UE_LOG(LogTemp, Warning, TEXT(" finished finding session"));
+		TArray<FString> ServerNames;
 		for (auto& SearchResult : SessionSearch->SearchResults)
 		{
 			UE_LOG(LogTemp, Warning, TEXT(" found session names: %s"), *SearchResult.GetSessionIdStr());
-
+			ServerNames.Add(SearchResult.GetSessionIdStr());
 		}
+		_Menu->SetServerList(ServerNames);
 	}
 
 
 }
+
+
+
+
 
 
 void UShooterMultiGameInstance::CreateSession()
@@ -155,15 +193,18 @@ void UShooterMultiGameInstance::CreateSession()
 	if (SessionInterface.IsValid()) {
 	
 		class FOnlineSessionSettings SessionSettings;
-		SessionSettings.bIsLANMatch = true; // we are searching on the local network
+		SessionSettings.bIsLANMatch = false; // we are searching on the local network
 		SessionSettings.NumPublicConnections = 2;
 		SessionSettings.bShouldAdvertise = true;
+		SessionSettings.bUsesPresence = true;
 
 		SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings); // when host button is pressed, we create the session
 	}
 
 
 }
+
+
 
 //call when button is clicked
 void UShooterMultiGameInstance::Host()
@@ -184,31 +225,63 @@ void UShooterMultiGameInstance::Host()
 	}
 }
 
-void UShooterMultiGameInstance::Join(const FString& Address)
+void UShooterMultiGameInstance::Join(uint32 Index)
 {
+	if (!SessionInterface.IsValid()) return;
+	if (!SessionSearch.IsValid()) return;
 	if (_Menu != nullptr)
 	{
+		//_Menu->SetServerList( {"TEST1", "TEST2"} );
 		_Menu->TearDown();
 	}
+	SessionInterface->JoinSession(0, SESSION_NAME, SessionSearch->SearchResults[Index]);
 
-	UEngine* Engine = GetEngine();
-	if (ensure(Engine == nullptr)) return;
-	Engine->AddOnScreenDebugMessage(0, 5, FColor::Green, FString::Printf(TEXT("Joining %s"), *Address));
+	//UEngine* Engine = GetEngine();
+	//if (ensure(Engine == nullptr)) return;
+	//Engine->AddOnScreenDebugMessage(0, 5, FColor::Green, FString::Printf(TEXT("Joining %s"), *Address));
 
-	APlayerController* PlayerController = GetFirstLocalPlayerController();
-	if (ensure(PlayerController == nullptr)) return;
+	//APlayerController* PlayerController = GetFirstLocalPlayerController();
+	//if (ensure(PlayerController == nullptr)) return;
 
-	PlayerController->ClientTravel(Address,TRAVEL_Absolute);
+	//PlayerController->ClientTravel(Address,TRAVEL_Absolute);
+}
+
+void UShooterMultiGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	if (!SessionInterface.IsValid()) return;
+
+
+		
+		UEngine* Engine = GetEngine();
+		if (ensure(Engine == nullptr)) return;
+		//Engine->AddOnScreenDebugMessage(0, 5, FColor::Green, FString::Printf(TEXT("Joining %s"), *Address));
+
+		APlayerController* PlayerController = GetFirstLocalPlayerController();
+		if (ensure(PlayerController == nullptr)) return;
+
+		FString Address;
+		if (!SessionInterface->GetResolvedConnectString(SessionName, Address))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Could not get connect string"));
+			return;
+		}
+
+		PlayerController->ClientTravel(Address, TRAVEL_Absolute);
+	
 }
 
 void UShooterMultiGameInstance::LoadMainMenu()
 {
-	if (_Menu != nullptr)
+	if (InGameMenu != nullptr)
 	{
-		_Menu->TearDown();
+		InGameMenu->TearDown();
 	}
 	APlayerController* PlayerController = GetFirstLocalPlayerController();
-	if (ensure(PlayerController == nullptr)) return;
+	if (ensure(PlayerController == nullptr))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Could not get player reference"));
+		return;
+	}
 
 	PlayerController->ClientTravel("/Game/Maps/MainMenuLevel", TRAVEL_Absolute);
 

@@ -4,6 +4,8 @@
 #include "ShooterMulti/Public/Components/SHealthComponent.h"
 #include "Net/UnrealNetwork.h" // contains DOREPLIFETIME MACRO
 
+
+class ASGameMode;
 // Sets default values for this component's properties
 USHealthComponent::USHealthComponent()
 {
@@ -16,6 +18,8 @@ USHealthComponent::USHealthComponent()
 
 	// ...
 	DefaultHealth = 100;
+
+	bIsDead = false;
 
 
 	SetIsReplicated(true);
@@ -45,7 +49,9 @@ void USHealthComponent::BeginPlay()
 void USHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
 {
 
-	if (Damage <= 0.0f)
+	//if(DamageType.IsOfType(FRadialDamageEvent::ClassID) )
+
+	if (Damage <= 0.0f || bIsDead)
 	{
 		return;
 	}
@@ -58,12 +64,18 @@ void USHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage, 
 
 	//update health clamped
 	Health = FMath::Clamp(Health - Damage, 0.0f, DefaultHealth);
-
+	if (Health <= 0)
+		bIsDead = true;
 
 	UE_LOG(LogTemp, Log, TEXT("Health Changed: %s"), *FString::SanitizeFloat(Health));
 
 	OnHealthChanged.Broadcast(this, Health, Damage, DamageType, InstigatedBy, DamageCauser);
 
+	ASGameMode* GM = Cast<ASGameMode>( GetWorld()->GetAuthGameMode() );
+	if (GM && bIsDead)
+	{
+		GM->OnActorKilled.Broadcast(GetOwner(), DamageCauser, InstigatedBy);
+	}
 }
 
 
@@ -94,4 +106,10 @@ bool USHealthComponent::IsFriendly(AActor* A, AActor* B)
 
 	return HealthCompA->TeamNum == HealthCompB->TeamNum;
 
+}
+
+float USHealthComponent::GetHealth() const
+{
+	//const is a promise this function is read only access
+	return Health;
 }

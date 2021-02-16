@@ -22,13 +22,15 @@ ASCharacter::ASCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-
+	//Create Camera Boom ( pull towards player if there's a collision
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComp"));
-	SpringArmComp->bUsePawnControlRotation = true;
+	SpringArmComp->bUsePawnControlRotation = true; // rotate arm based on controller
 	SpringArmComp->SetupAttachment(RootComponent);
 
+	//create camera
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
 	CameraComp->SetupAttachment(SpringArmComp);
+
 
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
 
@@ -43,6 +45,8 @@ ASCharacter::ASCharacter()
 
 	bReplicates = true;
 	HealthComp->SetIsReplicated(true);
+
+	
 
 }
 

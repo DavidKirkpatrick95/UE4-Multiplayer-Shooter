@@ -14,5 +14,11 @@
 				"UMGEditor"
 			]
 		}
+	],
+	"Plugins": [
+		{
+			"Name": "WebSocketNetworking",
+			"Enabled": true
+		}
 	]
 }

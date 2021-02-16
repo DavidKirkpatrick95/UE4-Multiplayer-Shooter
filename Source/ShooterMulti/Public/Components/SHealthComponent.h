@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "SGameMode.h"
 #include "SHealthComponent.generated.h"
 
 //OnHealthChanged Event
@@ -15,6 +16,9 @@ class SHOOTERMULTI_API USHealthComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
+
+	float GetHealth() const;
+
 	// Sets default values for this component's properties
 	USHealthComponent();
 
@@ -30,6 +34,8 @@ public:
 
 
 protected:
+
+	bool bIsDead;
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
@@ -38,6 +44,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HealthComponent")
 		float DefaultHealth;
+
 
 	UFUNCTION()
 		void HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
